@@ -84,29 +84,29 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
         return loss
 
 
-common_voice = DatasetDict()
+# common_voice = DatasetDict()
 
-common_voice["train"] = load_dataset(
-    "united-we-care/United-Syn-Med", split="train"
-)
-common_voice["test"] = load_dataset(
-    "united-we-care/United-Syn-Med", split="test"
-)
+# common_voice["train"] = load_dataset(
+#     "united-we-care/United-Syn-Med", split="train"
+# )
+# common_voice["test"] = load_dataset(
+#     "united-we-care/United-Syn-Med", split="test"
+# )
 
-path = "/home/icml02/.cache/huggingface/hub/datasets--united-we-care--United-Syn-Med/snapshots/54b992a26c1b2b00eeace87aea61c3596e2e0c88/data/audio"
-common_voice["train"] = common_voice["train"].map(
-    lambda x: {"file_name": path+"/train/"+x['file_name']}
-)
-common_voice["test"] = common_voice["test"].map(
-    lambda x: {"file_name": path+"/test/"+x['file_name']}
-)
+# path = "/home/icml02/.cache/huggingface/hub/datasets--united-we-care--United-Syn-Med/snapshots/54b992a26c1b2b00eeace87aea61c3596e2e0c88/data/audio"
+# common_voice["train"] = common_voice["train"].map(
+    # lambda x: {"file_name": path+"/train/"+x['file_name']}
+# )
+# common_voice["test"] = common_voice["test"].map(
+    # lambda x: {"file_name": path+"/test/"+x['file_name']}
+# )
 
-processor = WhisperProcessor.from_pretrained(
-    "openai/whisper-small", language="english", task="transcribe"
-)
+# processor = WhisperProcessor.from_pretrained(
+#     "openai/whisper-small", language="english", task="transcribe"
+# )
 
-sampling_rate = processor.feature_extractor.sampling_rate
-common_voice = common_voice.cast_column("file_name", Audio(sampling_rate=sampling_rate))
+# sampling_rate = processor.feature_extractor.sampling_rate
+# common_voice = common_voice.cast_column("file_name", Audio(sampling_rate=sampling_rate))
 
 def prepare_dataset_train(example):
     audio = example["file_name"]
@@ -137,8 +137,8 @@ def prepare_dataset_test(example):
     )
     return example
 
-common_voice["train"] = common_voice["train"].map(prepare_dataset_train, remove_columns=common_voice["train"].column_names)
-common_voice["test"]  = common_voice["test"].map(prepare_dataset_test,  remove_columns=common_voice["test"].column_names)
+# common_voice["train"] = common_voice["train"].map(prepare_dataset_train, remove_columns=common_voice["train"].column_names)
+# common_voice["test"]  = common_voice["test"].map(prepare_dataset_test,  remove_columns=common_voice["test"].column_names)
 
 @dataclass
 class DataCollatorSpeechSeq2SeqWithPadding:
@@ -166,11 +166,11 @@ class DataCollatorSpeechSeq2SeqWithPadding:
 
         return batch
 
-data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=processor)
+# data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=processor)
 
-metric = evaluate.load("wer")
+# metric = evaluate.load("wer")
 
-normalizer = BasicTextNormalizer()
+# normalizer = BasicTextNormalizer()
 
 class Scorer():
     def __init__(self, ref, gt):
@@ -228,17 +228,84 @@ def compute_metrics(pred):
 
     return {"wer_ortho": wer_ortho, "wer": wer}
 
-model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
+# model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
 
 # model.freeze_encoder()
 
-model.config.use_cache = False
+# model.config.use_cache = False
 
-model.generate = partial(
+# model.generate = partial(
+#     model.generate, language='english', task="transcribe", use_cache=True
+# )
+
+# training_args = Seq2SeqTrainingArguments(
+#     output_dir="./wsm_simclr",
+#     per_device_train_batch_size=128,
+#     gradient_accumulation_steps=1,
+#     learning_rate=1e-5,
+#     lr_scheduler_type="constant_with_warmup",
+#     warmup_steps=50,
+#     max_steps=1000,
+#     gradient_checkpointing=True,
+#     fp16=True,
+#     fp16_full_eval=True,
+#     evaluation_strategy="steps",
+#     per_device_eval_batch_size=16,
+#     predict_with_generate=True,
+#     generation_max_length=225,
+#     save_steps=250,
+#     eval_steps=10,
+#     logging_steps=5,
+#     load_best_model_at_end=True,
+#     metric_for_best_model="wer",
+#     greater_is_better=False,
+#     push_to_hub=True,
+# )
+
+# trainer = CustomSeq2SeqTrainer(
+#     args=training_args,
+#     model=model,
+#     train_dataset=common_voice["train"],
+#     eval_dataset=common_voice["test"],
+#     data_collator=data_collator,
+#     compute_metrics=compute_metrics,
+#     tokenizer=processor,
+# )
+
+# trainer.train()
+
+if __name__== "__main__":
+    print("Training complete. Evaluating model...")
+    common_voice = DatasetDict()
+    common_voice["test"] = load_dataset(
+        "united-we-care/United-Syn-Med", split="test"
+    )
+    common_voice["train"] = load_dataset(
+        "united-we-care/United-Syn-Med", split="train"
+    )
+    processor = WhisperProcessor.from_pretrained(
+    "openai/whisper-small", language="english", task="transcribe"
+    )
+
+    sampling_rate = processor.feature_extractor.sampling_rate
+    common_voice = common_voice.cast_column("file_name", Audio(sampling_rate=sampling_rate))
+
+    common_voice["train"] = common_voice["train"].map(prepare_dataset_train, remove_columns=common_voice["train"].column_names)
+    common_voice["test"]  = common_voice["test"].map(prepare_dataset_test,  remove_columns=common_voice["test"].column_names)
+
+
+    data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=processor)
+
+    metric = evaluate.load("wer")
+
+    normalizer = BasicTextNormalizer()
+
+    model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
+    model.config.use_cache = False
+    model.generate = partial(
     model.generate, language='english', task="transcribe", use_cache=True
-)
-
-training_args = Seq2SeqTrainingArguments(
+    )
+    training_args = Seq2SeqTrainingArguments(
     output_dir="./wsm_simclr",
     per_device_train_batch_size=128,
     gradient_accumulation_steps=1,
@@ -260,16 +327,16 @@ training_args = Seq2SeqTrainingArguments(
     metric_for_best_model="wer",
     greater_is_better=False,
     push_to_hub=True,
-)
+    )
 
-trainer = CustomSeq2SeqTrainer(
-    args=training_args,
-    model=model,
-    train_dataset=common_voice["train"],
-    eval_dataset=common_voice["test"],
-    data_collator=data_collator,
-    compute_metrics=compute_metrics,
-    tokenizer=processor,
-)
+    trainer = CustomSeq2SeqTrainer(
+        args=training_args,
+        model=model,
+        train_dataset=common_voice["train"],
+        eval_dataset=common_voice["test"],
+        data_collator=data_collator,
+        compute_metrics=compute_metrics,
+        tokenizer=processor,
+    )
 
-trainer.train()
+    trainer.train()
