@@ -300,10 +300,10 @@ if __name__== "__main__":
     common_voice = common_voice.cast_column("file_name", Audio(sampling_rate=sampling_rate))
 
     #question: why does this work even though I didn't explicity pass the processor?
-    # common_voice["train"] = common_voice["train"].select(indices=range(10)).map(prepare_dataset_train, remove_columns=common_voice["train"].column_names)
-    # common_voice["test"]  = common_voice["test"].select(indices=range(10)).map(prepare_dataset_test,  remove_columns=common_voice["test"].column_names)
-    common_voice["train"] = common_voice["train"].map(prepare_dataset_train, remove_columns=common_voice["train"].column_names)
-    common_voice["test"]  = common_voice["test"].map(prepare_dataset_test,  remove_columns=common_voice["test"].column_names)
+    common_voice["train"] = common_voice["train"].select(indices=range(50)).map(prepare_dataset_train, remove_columns=common_voice["train"].column_names)
+    common_voice["test"]  = common_voice["test"].select(indices=range(50)).map(prepare_dataset_test,  remove_columns=common_voice["test"].column_names)
+    # common_voice["train"] = common_voice["train"].map(prepare_dataset_train, remove_columns=common_voice["train"].column_names)
+    # common_voice["test"]  = common_voice["test"].map(prepare_dataset_test,  remove_columns=common_voice["test"].column_names)
 
     data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=processor)
 

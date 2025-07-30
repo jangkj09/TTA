@@ -1,1 +1,13 @@
 # TTA
+
+# setup
+```
+pip3 install transformers datasets accelerate evaluate
+pip3 install torch torchvision torchaudio
+pip install pycocoevalcap
+pip install torchcodec
+conda install -n tta_env ipykernel --update-deps --force-reinstall
+cd ~/.conda/envs/tta_env
+mv ./lib/libstdc++.so.6 ./lib/libstdc++.so.6.old
+conda install libstdcxx-ng>=12.2.0
+```
