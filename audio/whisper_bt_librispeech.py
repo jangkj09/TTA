@@ -26,6 +26,8 @@ from pycocoevalcap.meteor.meteor import Meteor
 from pycocoevalcap.rouge.rouge import Rouge
 from pycocoevalcap.cider.cider import Cider
 from pycocoevalcap.spice.spice import Spice
+import os
+
 
 class BarlowTwins(nn.Module):
     def __init__(self, lambda_offdiag=0.0051):
@@ -76,7 +78,13 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
         criterion = BarlowTwins()
         labels = inputs.pop("labels")
         features = inputs["input_features"]
+        # inputs["input_features"] = features[:,:80,:]
+        # e_i = model.model.encoder(**inputs)[0][:,-1,:]
+        # inputs["input_features"] = features[:,80:,:]
+        # e_j = model.model.encoder(**inputs)[0][:,-1,:]
+
         inputs["input_features"] = features[:,:80,:]
+        model = model.module if hasattr(model, "module") else model
         e_i = model.model.encoder(**inputs)[0][:,-1,:]
         inputs["input_features"] = features[:,80:,:]
         e_j = model.model.encoder(**inputs)[0][:,-1,:]
@@ -109,8 +117,8 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
 # common_voice = common_voice.cast_column("file_name", Audio(sampling_rate=sampling_rate))
 
 def prepare_dataset_train(example):
-    audio = example["file_name"]
-    text = example["transcription"]
+    audio = example["audio"]
+    text = example["text"]
     waveform = torch.tensor(audio["array"])
     sample_rate = audio["sampling_rate"]
 
@@ -128,8 +136,8 @@ def prepare_dataset_train(example):
     return example
 
 def prepare_dataset_test(example):
-    audio = example["file_name"]
-    text = example["transcription"]
+    audio = example["audio"]
+    text = example["text"]
     example = processor(
         audio=audio["array"],
         sampling_rate=audio["sampling_rate"],
@@ -275,13 +283,14 @@ def compute_metrics(pred):
 # trainer.train()
 
 if __name__== "__main__":
+    # os.environ["TOKENIZERS_PARALLELISM"] = "false"
     print("Training Model...")
     common_voice = DatasetDict()
     common_voice["test"] = load_dataset(
-        "united-we-care/United-Syn-Med", split="test"
+        "openslr/librispeech_asr", 'clean', split="test"
     )
     common_voice["train"] = load_dataset(
-        "united-we-care/United-Syn-Med", split="train"
+        "openslr/librispeech_asr", 'clean', split="train.100"
     )
     processor = WhisperProcessor.from_pretrained(
     "openai/whisper-small", language="english", task="transcribe"
@@ -290,9 +299,11 @@ if __name__== "__main__":
     sampling_rate = processor.feature_extractor.sampling_rate
     common_voice = common_voice.cast_column("file_name", Audio(sampling_rate=sampling_rate))
 
+    #question: why does this work even though I didn't explicity pass the processor?
+    # common_voice["train"] = common_voice["train"].select(indices=range(10)).map(prepare_dataset_train, remove_columns=common_voice["train"].column_names)
+    # common_voice["test"]  = common_voice["test"].select(indices=range(10)).map(prepare_dataset_test,  remove_columns=common_voice["test"].column_names)
     common_voice["train"] = common_voice["train"].map(prepare_dataset_train, remove_columns=common_voice["train"].column_names)
     common_voice["test"]  = common_voice["test"].map(prepare_dataset_test,  remove_columns=common_voice["test"].column_names)
-
 
     data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=processor)
 
@@ -301,6 +312,7 @@ if __name__== "__main__":
     normalizer = BasicTextNormalizer()
 
     model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
+    # model.freeze_encoder()
     model.config.use_cache = False
     model.generate = partial(
     model.generate, language='english', task="transcribe", use_cache=True
@@ -316,7 +328,7 @@ if __name__== "__main__":
     gradient_checkpointing=True,
     fp16=True,
     fp16_full_eval=True,
-    evaluation_strategy="steps",
+    eval_strategy="steps",
     per_device_eval_batch_size=16,
     predict_with_generate=True,
     generation_max_length=225,
