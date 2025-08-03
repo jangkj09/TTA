@@ -31,6 +31,6 @@ echo "Setting CUDA_VISIBLE_DEVICES to $device"
 # If you want to run on CPU, you can set device to -1 and modify the script accordingly    
 export CUDA_VISIBLE_DEVICES=$device
 
-python3 ./audio/whisper_librispeech_bt.py
+python3 ./audio/whisper_swav_openslr_tr.py
 
 
