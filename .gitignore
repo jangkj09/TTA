@@ -149,3 +149,6 @@ openSLR-TR
 openSLR-TR-processed-bt
 openSLR-TR-processed-tpt
 openSLR-TR-processed-tpt.zip
+openSLR-*
+finetune_models
+

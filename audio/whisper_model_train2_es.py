@@ -22,7 +22,7 @@ import sys
 lr=float(sys.argv[1]) if len(sys.argv) > 1 else 0.0001
 
 class Config:
-    parent_dir = "/home/jangkj/gitRepo/TTA_data/TR/"  # Parent directory containing parquet files
+    parent_dir = "/home/jangkj/gitRepo/TTA_data/ES/"  # Parent directory containing parquet files
     # parquet_dir = "/data1/wuyinjun/datasets/librispeech/clean/train.100/"  # Directory containing parquet files
     sample_rate = 16000  # Whisper expects 16kHz audio
     batch_size = 8  # Mini-batch size
@@ -30,7 +30,7 @@ class Config:
     num_epochs = 10
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_name = "openai/whisper-small"
-    save_dir = "/home/jangkj/gitRepo/TTA/finetune_models/whisper_tr/"
+    save_dir = "/home/jangkj/gitRepo/TTA/finetune_models/whisper_es/"
     max_audio_length = 30 * sample_rate  # 30 seconds max
 
 # Create dataset class that reads directly from parquet
@@ -55,7 +55,7 @@ class ParquetAudioDataset(Dataset):
         # # batch = table.slice(row_idx, 1).to_pandas()
         # item = self.df_ls[file_idx].iloc[row_idx]
         # audio_data = item["audio_data"]
-        audio_data, sample_rate = librosa.load(self.parquet_paths[idx] + ".flac", sr=None)
+        audio_data, sample_rate = librosa.load(self.parquet_paths[idx] + ".wav", sr=None)
         text = ""
         with open(self.parquet_paths[idx] + ".txt", "r") as f:
             text += f.read().strip()

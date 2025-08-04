@@ -174,7 +174,7 @@ def compute_metrics(pred):
 
 if __name__== "__main__":
     print("Training Model...")
-    common_voice = load_from_disk("openSLR-TR-processed-tpt")
+    common_voice = load_from_disk("../openSLR-TR-processed-tpt")
     
     processor = WhisperProcessor.from_pretrained(
     "openai/whisper-small", language="turkish", task="transcribe"
@@ -195,9 +195,9 @@ if __name__== "__main__":
     model.generate, language='turkish', task="transcribe", use_cache=True
     )
     training_args = Seq2SeqTrainingArguments(
-    output_dir="./output/results/openslr_tr_encoder_batch128",
-    logging_dir="./output/logs/openslr_tr_encoder_batch128",
-    per_device_train_batch_size=128,
+    output_dir="./output/results/openslr_tr_encoder_batch16debug",
+    logging_dir="./output/logs/openslr_tr_encoder_batch16debug",
+    per_device_train_batch_size=16,
     gradient_accumulation_steps=1,
     learning_rate=1e-8,
     lr_scheduler_type="constant_with_warmup",
@@ -207,7 +207,7 @@ if __name__== "__main__":
     fp16=True,
     fp16_full_eval=True,
     eval_strategy="steps",
-    per_device_eval_batch_size=32,
+    per_device_eval_batch_size=16,
     predict_with_generate=True,
     generation_max_length=225,
     save_steps=1000,
