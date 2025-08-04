@@ -63,7 +63,10 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
         predicted_ids = model.generate(inputs["input_features"])
         transcription = self.processor.batch_decode(predicted_ids, skip_special_tokens=True)
         model.train()
-        labels = self.processor(text=transcription, padding=True, truncation=True, return_tensors="pt")["input_ids"].to("cuda")
+        labels = self.processor(text=transcription, 
+                                padding=True, 
+                                truncation=True, 
+                                return_tensors="pt")["input_ids"].to("cuda")
         inputs["labels"] = labels
         cross_attn_head_mask = torch.zeros((12,12,), dtype=torch.float32, device="cuda:0")
         outputs = model(**inputs, cross_attn_head_mask=cross_attn_head_mask, output_hidden_states=True)
@@ -71,7 +74,7 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
         from sklearn.cluster import KMeans
         clustering = KMeans(n_clusters=10, random_state=0, n_init="auto").fit(text_embeds)
         labels = clustering.labels_
-        min_samples = 3
+        min_samples = 1
         from collections import Counter
         label_counts = Counter(labels)
         satisfies_min_samples = all(count >= min_samples for count in label_counts.values())
@@ -192,22 +195,22 @@ if __name__== "__main__":
     model.generate, language='turkish', task="transcribe", use_cache=True
     )
     training_args = Seq2SeqTrainingArguments(
-    output_dir="./output/results/openslr_tr_encoder",
-    logging_dir="./output/logs/openslr_tr_encoder",
-    per_device_train_batch_size=32,
+    output_dir="./output/results/openslr_tr_encoder_batch128",
+    logging_dir="./output/logs/openslr_tr_encoder_batch128",
+    per_device_train_batch_size=128,
     gradient_accumulation_steps=1,
-    learning_rate=2e-6,
+    learning_rate=1e-8,
     lr_scheduler_type="constant_with_warmup",
-    warmup_steps=20,
+    warmup_steps=10,
     max_steps=400,
     gradient_checkpointing=True,
     fp16=True,
     fp16_full_eval=True,
     eval_strategy="steps",
-    per_device_eval_batch_size=16,
+    per_device_eval_batch_size=32,
     predict_with_generate=True,
     generation_max_length=225,
-    save_steps=250,
+    save_steps=1000,
     eval_steps=5,
     logging_steps=1,
     load_best_model_at_end=True,
