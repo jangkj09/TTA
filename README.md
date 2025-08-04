@@ -12,4 +12,5 @@ mv ./lib/libstdc++.so.6 ./lib/libstdc++.so.6.old
 conda install libstdcxx-ng>=12.2.0
 pip install soundfile
 pip install jiwer
+pip install scikit-learn
 ```
